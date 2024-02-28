@@ -86,3 +86,13 @@ resource "null_resource" "ansible_inventory" {
     EOT
   }
 }
+resource "null_resource" "cleanUpInventory"{
+
+       
+        provisioner = "local-exec" {
+         when = destroy
+        command = "rm -f inventory"
+
+}
+
+}
