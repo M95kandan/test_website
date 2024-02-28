@@ -1,0 +1,148 @@
+- hosts: k8s_master
+  become: true
+  vars:
+    k8s_version: "1.26.1"
+  tasks:
+    - name: Install required packages
+      dnf:
+        name:
+          - iproute-tc
+          - conntrack-tools
+        state: present
+
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Configure required sysctl settings
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+      loop:
+        - { name: net.bridge.bridge-nf-call-iptables, value: 1 }
+        - { name: net.ipv4.ip_forward, value: 1 }
+        - { name: net.bridge.bridge-nf-call-ip6tables, value: 1 }
+
+    - name: Add Kubernetes repository
+      ansible.builtin.yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
+        enabled: yes
+        gpgcheck: yes
+        repo_gpgcheck: yes
+        gpgkey: "https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg"
+
+    - name: Install Kubernetes packages
+      dnf:
+        name:
+          - kubelet-{{ k8s_version }}
+          - kubeadm-{{ k8s_version }}
+          - kubectl-{{ k8s_version }}
+        state: present
+
+    - name: Enable and start kubelet
+      systemd:
+        name: kubelet
+        enabled: yes
+        state: started
+
+    - name: Initialize Kubernetes cluster
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      register: kubeadm_init
+
+    - name: Copy admin.conf to regular user's home directory
+      become: no
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "$HOME/.kube/config"
+        remote_src: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Install Calico network plugin
+      community.kubernetes.k8s:
+        state: present
+        definition: "{{ lookup('url', 'https://docs.projectcalico.org/manifests/calico.yaml') }}"
+
+    - name: Get join command
+      set_fact:
+        join_command: "{{ kubeadm_init.stdout_lines[-1] }}"
+
+- hosts: k8s_nodes
+  become: true
+  vars:
+    k8s_version: "1.26.1"
+  tasks:
+    - name: Install required packages
+      dnf:
+        name:
+          - iproute-tc
+          - conntrack-tools
+        state: present
+
+    - name: Load kernel modules
+      modprobe:
+        name: "{{ item }}"
+        state: present
+      loop:
+        - overlay
+        - br_netfilter
+
+    - name: Configure required sysctl settings
+      sysctl:
+        name: "{{ item.name }}"
+        value: "{{ item.value }}"
+      loop:
+        - { name: net.bridge.bridge-nf-call-iptables, value: 1 }
+        - { name: net.ipv4.ip_forward, value: 1 }
+        - { name: net.bridge.bridge-nf-call-ip6tables, value: 1 }
+
+    - name: Add Kubernetes repository
+      ansible.builtin.yum_repository:
+        name: kubernetes
+        description: Kubernetes
+        baseurl: "https://packages.cloud.google.com/yum/repos/kubernetes-el7-x86_64"
+        enabled: yes
+        gpgcheck: yes
+        repo_gpgcheck: yes
+        gpgkey: "https://packages.cloud.google.com/yum/doc/yum-key.gpg https://packages.cloud.google.com/yum/doc/rpm-package-key.gpg"
+
+    - name: Install Kubernetes packages
+      dnf:
+        name:
+          - kubelet-{{ k8s_version }}
+          - kubeadm-{{ k8s_version }}
+          - kubectl-{{ k8s_version }}
+        state: present
+
+    - name: Enable and start kubelet
+      systemd:
+        name: kubelet
+        enabled: yes
+        state: started
+
+    - name: Initialize Kubernetes cluster
+      command: kubeadm init --pod-network-cidr=10.244.0.0/16
+      register: kubeadm_init
+
+    - name: Copy admin.conf to regular user's home directory
+      become: no
+      copy:
+        src: /etc/kubernetes/admin.conf
+        dest: "$HOME/.kube/config"
+        remote_src: yes
+        owner: "{{ ansible_user }}"
+        group: "{{ ansible_user }}"
+
+    - name: Install Calico network plugin
+      community.kubernetes.k8s:
+        state: present
+        definition: "{{ lookup('url', 'https://docs.projectcalico.org/manifests/calico.yaml') }}"
+
+    - name: Get join command
+      set_fact:
