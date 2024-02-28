@@ -1,10 +1,16 @@
-FROM httpd:2.4
+FROM centos:7
 
-# Install git 
-RUN apt-get update && apt-get install -y git
+# Install git
+RUN yum install -y git httpd
 
-# Copy website files
-ADD https://github.com/M95kandan/test_website.git /var/www/html/
+# Clone the repo
+RUN git clone https://github.com/M95kandan/test_website.git /var/www/html/
 
 # Expose port 80
 EXPOSE 80
+
+# Set the working directory
+WORKDIR /var/www/html/
+
+# Start the Apache server
+CMD ["httpd", "-D", "FOREGROUND"]
