@@ -2,7 +2,7 @@
 - hosts: k8s_master
   become: true
   vars:
-    k8s_version: "1.21.0-00"  # Replace with your desired Kubernetes version
+    k8s_version: "1.29.2"  # Replace with your desired Kubernetes version
   tasks:
     - name: Disable swap
       command: swapoff -a
