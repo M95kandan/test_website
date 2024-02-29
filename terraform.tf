@@ -77,17 +77,6 @@ resource "aws_instance" "docker_host" {
   }
 }
 
-resource "aws_instance" "qa_host" {
-  ami           = "ami-0e670eb768a5fc3d4"
-  instance_type = "t2.small"
-  key_name      = "jenkins-slave-key"
-
-  vpc_security_group_ids = [aws_security_group.docker-qa-sg.id]
-
-  tags = {
-    Name = "qa_host"
-  }
-}
 
 resource "null_resource" "generate_inventory" {
   provisioner "local-exec" {
