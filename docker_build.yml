@@ -17,8 +17,11 @@
       git:
         repo: "{{ github_repo_url }}"
         dest: "./"
-     
-
+    - name: Install Docker package
+      yum:
+        name: docker.io
+        state: present
+    
     - name: Build Docker image
       docker_build:
         path: "/path/to/local/repository"
