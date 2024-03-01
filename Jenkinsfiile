@@ -1,40 +1,37 @@
----
-- name: Build and Push Docker Image
-  hosts: localhost
-  become: yes
-
-  vars:
-    docker_image_tags:
-      - "{{ build_number_tag }}"
-      - "latest"
-
-  tasks:
-    - name: Clone private GitHub repository
-      git:
-        repo: "{{ github_repo_url }}"
-        dest: "/home/ec2-user/test_website"
-        clone: yes
-
-    - name: Install Docker package
-      yum:
-        name: docker
-        state: present
-
-    - name: Start Docker service
-      service:
-        name: docker
-        state: started
-
-    - name: Build and tag Docker image
-      command: "docker build -t {{ dockerhub_repository }}:{{ item }} /home/ec2-user/test_website"
-      become: yes
-      loop: "{{ docker_image_tags }}"
-
-    - name: Log in to Docker Hub
-      command: "docker login -u {{ dockerhub_username }} -p {{ dockerhub_password }}"
-      become: yes
-
-    - name: Push Docker images to Docker Hub
-      command: "docker push {{ dockerhub_repository }}:{{ item }}"
-      become: yes
-      loop: "{{ docker_image_tags }}"
+pipeline {
+    agent any
+    
+    environment {
+        GITHUB_REPO_URL = "https://M95kandan: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@github.com/M95kandan/test_website.git"
+        DOCKERHUB_USERNAME = "m95kandan"
+        DOCKERHUB_PASSWORD = "M#95kandan"
+        DOCKERHUB_REPOSITORY = "m95kandan/website"
+        BUILD_NUMBER_TAG = "${BUILD_NUMBER}"
+    }
+    
+    stages {
+        stage('Clone Repository') {
+            steps {
+                checkout([$class: 'GitSCM', branches: [[name: '*/master']], doGenerateSubmoduleConfigurations: false, extensions: [], submoduleCfg: [], userRemoteConfigs: [[credentialsId: '', url: env.GITHUB_REPO_URL]]])
+            }
+        }
+        
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    ansiblePlaybook(
+                        playbook: '/path/to/your/playbook.yml',
+                        inventory: '/path/to/your/inventory',
+                        extraVars: [
+                            github_repo_url: env.GITHUB_REPO_URL,
+                            dockerhub_username: env.DOCKERHUB_USERNAME,
+                            dockerhub_password: env.DOCKERHUB_PASSWORD,
+                            dockerhub_repository: env.DOCKERHUB_REPOSITORY,
+                            build_number_tag: env.BUILD_NUMBER_TAG
+                        ]
+                    )
+                }
+            }
+        }
+    }
+}
