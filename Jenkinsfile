@@ -1,5 +1,5 @@
 pipeline {
-    agent { label 'IAC' } // Specify the label of your Jenkins agent
+    agent { label 'slave-IAC' } // Specify the label of your Jenkins agent
 
     environment {
         GITHUB_CREDENTIALS = credentials('github_token')
