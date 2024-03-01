@@ -1,0 +1,25 @@
+- name: Copy deployment-file.yaml and service-file.yaml to Kubernetes Master
+  copy:
+    src: "deployment-file.yaml"
+    dest: "/home/ec2-user/deployment-file.yaml"
+    owner: "{{ ansible_ssh_user }}"
+    group: "{{ ansible_ssh_user }}"
+    mode: '0644'
+  delegate_to: "{{ groups['k8s_master'][0] }}"  # Delegate task to the first host in k8s_master group
+
+- name: Apply deployment-file.yaml
+  command: kubectl apply -f /home/ec2-user/deployment-file.yaml
+  delegate_to: "{{ groups['k8s_master'][0] }}"  # Delegate task to the first host in k8s_master group
+
+- name: Copy service-file.yaml to Kubernetes Master
+  copy:
+    src: "service-file.yaml"
+    dest: "/home/ec2-user/service-file.yaml"
+    owner: "{{ ansible_ssh_user }}"
+    group: "{{ ansible_ssh_user }}"
+    mode: '0644'
+  delegate_to: "{{ groups['k8s_master'][0] }}"  # Delegate task to the first host in k8s_master group
+
+- name: Apply service-file.yaml
+  command: kubectl apply -f /home/ec2-user/service-file.yaml
+  delegate_to: "{{ groups['k8s_master'][0] }}"  # Delegate task to the first host in k8s_master group
