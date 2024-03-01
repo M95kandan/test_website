@@ -4,7 +4,7 @@ FROM centos:7
 RUN yum install -y git httpd
 
 # Copy the entire AICTE folder into /var/www/html/
-COPY AICTE /var/www/html/AICTE
+COPY AICTE /var/www/html/
 
 # Expose port 80
 EXPOSE 80
