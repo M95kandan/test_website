@@ -9,6 +9,10 @@
       - "latest"
 
   tasks:
+    - name: Install git package
+      yum:
+        name: git
+        state: present
     - name: Clone private GitHub repository
       git:
         repo: "{{ github_repo_url }}"
