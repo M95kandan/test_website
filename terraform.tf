@@ -8,7 +8,7 @@ resource "aws_security_group" "k8s-sg" {
 
   ingress {
     from_port   = 0
-    to_port     = 0
+    to_port     = 0 
     protocol    = "-1"
     cidr_blocks = ["0.0.0.0/0"]
   }
@@ -33,7 +33,7 @@ resource "aws_security_group" "docker-qa-sg" {
   }
 
   ingress {
-    from_port   = 80
+    from_port   = 80 
     to_port     = 80
     protocol    = "tcp"
     cidr_blocks = ["0.0.0.0/0"]
@@ -41,7 +41,7 @@ resource "aws_security_group" "docker-qa-sg" {
 }
 
 resource "aws_instance" "k8s_master" {
-  ami           = "ami-0187337106779cdf8"
+  ami           = "ami-0187337106779cdf8" 
   instance_type = "t2.medium"
   key_name      = "jenkins-slave-key"
 
@@ -56,7 +56,7 @@ resource "aws_instance" "k8s_node" {
   count         = 3
   ami           = "ami-0187337106779cdf8"
   instance_type = "t2.medium"
-  key_name      = "jenkins-slave-key"
+  key_name      = "jenkins-slave-key"  
 
   vpc_security_group_ids = [aws_security_group.k8s-sg.id]
 
@@ -77,20 +77,31 @@ resource "aws_instance" "docker_host" {
   }
 }
 
+resource "aws_instance" "qa_host" {
+  ami           = "ami-0e670eb768a5fc3d4"
+  instance_type = "t2.small"
+  key_name      = "jenkins-slave-key"
+
+  vpc_security_group_ids = [aws_security_group.docker-qa-sg.id]
+
+  tags = {
+    Name = "qa_host" 
+  }
+}
 
 resource "null_resource" "generate_inventory" {
   provisioner "local-exec" {
     command = <<EOF
-cat <<'EOT' > inventory
+cat <<'EOT' > inventory  
 [k8s_master]
 ${aws_instance.k8s_master.public_ip}
 
-[k8s_nodes]
+[k8s_nodes]  
 %{ for ip in aws_instance.k8s_node.*.public_ip ~}
 ${ip}
 %{ endfor ~}
 
-[docker_host]
+[docker_host] 
 ${aws_instance.docker_host.public_ip}
 
 [qa_host]
