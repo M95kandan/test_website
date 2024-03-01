@@ -2,7 +2,7 @@ pipeline {
     agent { label 'slave-IAC' } // Specify the label of your Jenkins agent
 
     environment {
-        GITHUB_CREDENTIALS = credentials('github_token')
+        GITHUB_CREDENTIALS = credentials('79939529-52e1-4037-93ed-e7843a722b7f')
         BRANCH_NAME = 'main' // Replace with your desired branch name
     }
 
