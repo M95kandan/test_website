@@ -16,7 +16,7 @@ pipeline {
             steps {
                 script {
                     // Clone the repository
-                    sh 'git clone ${GITHUB_REPO_URL}'
+                    git branch: 'main', url: 'https://github.com/M95kandan/mk_website.git'
                 }
             }
         }
