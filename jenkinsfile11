@@ -1,0 +1,61 @@
+pipeline {
+    agent { label 'slave-IAC' }
+    
+    environment {
+        GITHUB_REPO_URL = "https://github.com/M95kandan/mk_website.git"
+        DOCKERHUB_USERNAME = "m95kandan"
+        DOCKERHUB_CREDENTIAL_ID = "4f63ca7d-9d62-480e-8d10-9b2c8e093d0d"
+        DOCKERHUB_REPOSITORY = "m95kandan/website"
+        BUILD_NUMBER_TAG = "${BUILD_NUMBER}"
+        RETRY_COUNT = 3
+        RETRY_INTERVAL = 60  // seconds
+    }
+    
+    stages {
+        stage('Clone Repository') {
+            steps {
+                script {
+                    // Clone the repository
+                    git branch: 'main', url: 'https://github.com/M95kandan/mk_website.git'
+                }
+            }
+        }
+
+        stage('Build Infrastructure') {
+            steps {
+                script {
+                    // Change to the directory containing terraform.tf
+                    dir('mk_website') {
+                        // Execute Terraform commands
+                        sh 'sudo terraform init'
+                        sh 'sudo terraform apply --auto-approve'
+                    }
+                }
+            }
+        }
+
+        stage('Build and Push Docker Image') {
+            steps {
+                script {
+                    retry(RETRY_COUNT) {
+                        withCredentials([usernamePassword(credentialsId: DOCKERHUB_CREDENTIAL_ID, usernameVariable: 'DOCKERHUB_USERNAME', passwordVariable: 'DOCKERHUB_PASSWORD')]) {
+                            dir('mk_website') {
+                                ansiblePlaybook(
+                                    playbook: 'docker_build.yml',
+                                    inventory: 'inventory',
+                                    extraVars: [
+                                        github_repo_url: GITHUB_REPO_URL,
+                                        dockerhub_username: DOCKERHUB_USERNAME,
+                                        dockerhub_password: DOCKERHUB_PASSWORD,
+                                        dockerhub_repository: DOCKERHUB_REPOSITORY,
+                                        build_number_tag: BUILD_NUMBER_TAG
+                                    ]
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
